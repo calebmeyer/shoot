@@ -54,32 +54,34 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>, window: Que
 pub struct Background(Handle<Image>);
 
 pub fn handle_resize(
-    window: Query<&Window>,
     mut commands: Commands,
     mut resize_reader: EventReader<WindowResized>,
-    background_query: Query<&Background>,
+    background_entity: Query<Entity, With<Background>>,
+    background: Query<&Background>,
 ) {
-    let window = window.single();
-    let width = window.width();
-    let height = window.height();
-    info!("Window width: {}", width);
-    info!("Window height: {}", height);
-
     for event in resize_reader.read() {
         info!("Window resized to {}x{}", event.width, event.height);
 
-        let image = background_query.single().0.clone();
+        // The below code causes a crash
+        // let old = background_entity.single();
+        // commands.entity(old).despawn();
+
+        let image = background.single().0.clone();
 
         // Update the sprite's custom size when the window is resized
-        commands.spawn(Sprite {
-            image,
-            image_mode: SpriteImageMode::Tiled {
-                tile_x: true,
-                tile_y: true,
-                stretch_value: 0.5,
-            },
-            custom_size: Some(Vec2::new(event.width, event.height)),
-            ..default()
-        });
+        commands
+            .spawn(Sprite {
+                image: image.clone(),
+                image_mode: SpriteImageMode::Tiled {
+                    tile_x: true,
+                    tile_y: true,
+                    stretch_value: 0.5,
+                },
+                custom_size: Some(Vec2::new(event.width, event.height)),
+                ..default()
+            })
+            .insert(Background(image.clone()));
     }
+
+    resize_reader.clear();
 }
